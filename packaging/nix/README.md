@@ -27,15 +27,18 @@ does.
 
 ## Updating for a new release
 
-`version` and the AppImage `hash` in `flake.nix` track a specific GitHub release, same as
-`pkgver`/`sha256sums` in the AUR `PKGBUILD`.
+`version` and the AppImage `hash` in `pin.json` track a specific GitHub release, same as
+`pkgver`/`sha256sums` in the AUR `PKGBUILD`. They live in their own JSON file rather than as literals
+inside `flake.nix` so an update is a plain data write (`jq`) instead of pattern-matching Nix syntax
+with `sed` — a version bump can't silently no-op just because the surrounding expression got
+reformatted.
 
 `.github/workflows/publish-nix.yml` does this automatically: `release.yml` calls it (mirroring
 `publish_aur`) for every non-preview release with the new tag, and it runs
 `packaging/nix/scripts/update.sh`, which:
 
 1. Reads the AppImage asset's digest straight off the GitHub Releases API (no download needed).
-2. Converts it to Nix's SRI hash format and updates `version`/`hash` in `flake.nix`.
+2. Converts it to Nix's SRI hash format and rewrites `pin.json`.
 3. Runs `nix build` on the result as a sanity check.
 
 It then opens a PR with the diff (`peter-evans/create-pull-request`) rather than pushing directly,

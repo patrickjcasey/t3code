@@ -36,7 +36,7 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v14
 
-      - name: Update flake.nix for the release
+      - name: Update pin.json for the release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
@@ -45,11 +45,11 @@ jobs:
       - name: Open pull request
         uses: peter-evans/create-pull-request@v7
         with:
-          add-paths: packaging/nix/flake.nix
-          commit-message: "packaging(nix): update flake to ${{ inputs.release_tag }}"
-          title: "packaging(nix): update flake to ${{ inputs.release_tag }}"
+          add-paths: packaging/nix/pin.json
+          commit-message: "packaging(nix): update pin to ${{ inputs.release_tag }}"
+          title: "packaging(nix): update pin to ${{ inputs.release_tag }}"
           body: >
-            Automated update of `packaging/nix/flake.nix` to `${{ inputs.release_tag }}`, run by
+            Automated update of `packaging/nix/pin.json` to `${{ inputs.release_tag }}`, run by
             `.github/workflows/publish-nix.yml` after the release published.
           branch: packaging-nix/${{ inputs.release_tag }}
           delete-branch: true

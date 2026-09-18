@@ -9,11 +9,15 @@
       pkgs = import nixpkgs { inherit system; };
 
       pname = "t3code";
-      version = "0.0.42";
+      # version/hash are data, not source: kept in pin.json so
+      # scripts/update.sh can overwrite them with jq instead of patching
+      # Nix syntax with sed.
+      pin = builtins.fromJSON (builtins.readFile ./pin.json);
+      inherit (pin) version hash;
 
       src = pkgs.fetchurl {
         url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-x86_64.AppImage";
-        hash = "sha256-jcH8zavC7TpZo5RMx3LvEZMbk1FAHAlj7TBdX5bjzfQ=";
+        inherit hash;
       };
 
       appimageContents = pkgs.appimageTools.extract { inherit pname version src; };

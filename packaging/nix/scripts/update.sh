@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 repo='pingdotgg/t3code'
 tag="${RELEASE_TAG:?RELEASE_TAG is required}"
-flake="$repo_root/packaging/nix/flake.nix"
+pin="$repo_root/packaging/nix/pin.json"
 
 if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "Release $tag is not a stable release; the Nix flake only tracks stable versions."
@@ -22,18 +22,20 @@ if [[ ! "$asset_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
   exit 1
 fi
 
-hash="$(nix hash convert --hash-algo sha256 "${asset_digest#sha256:}")"
+nix_hash="$(nix hash convert --hash-algo sha256 "${asset_digest#sha256:}")"
 
-sed -Ei \
-  -e "s/^(\s*version = )\"[0-9]+\.[0-9]+\.[0-9]+\";/\1\"$version\";/" \
-  -e "s#^(\s*hash = )\"sha256-[A-Za-z0-9+/=]+\";#\1\"$hash\";#" \
-  "$flake"
+# version/hash live in pin.json as data, not as text inside flake.nix, so
+# there's no Nix-syntax pattern to match here (and nothing to silently miss).
+tmp="$(mktemp)"
+jq -n --arg version "$version" --arg hash "$nix_hash" '{version: $version, hash: $hash}' >"$tmp"
+mv "$tmp" "$pin"
 
-if git -C "$repo_root" diff --quiet -- "$flake"; then
+if git -C "$repo_root" diff --quiet -- "$pin"; then
   echo "Nix flake is already up to date."
   exit 0
 fi
 
-# Build before handing the diff off, so a stale desktop-entry assumption or a
-# bad sed match fails CI instead of landing in an automated PR.
+# Build before handing the diff off, so a bad digest or a broken
+# extraInstallCommands assumption fails CI instead of landing in an
+# automated PR.
 nix build --no-link -L "$repo_root/packaging/nix"
