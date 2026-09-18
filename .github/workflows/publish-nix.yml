@@ -1,0 +1,55 @@
+name: Publish Nix packaging
+
+# See packaging/nix/README.md.
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to publish"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: publish-nix
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Update flake and open PR
+    runs-on: blacksmith-8vcpu-ubuntu-2404
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Update flake.nix for the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: packaging/nix/scripts/update.sh
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: packaging/nix/flake.nix
+          commit-message: "packaging(nix): update flake to ${{ inputs.release_tag }}"
+          title: "packaging(nix): update flake to ${{ inputs.release_tag }}"
+          body: >
+            Automated update of `packaging/nix/flake.nix` to `${{ inputs.release_tag }}`, run by
+            `.github/workflows/publish-nix.yml` after the release published.
+          branch: packaging-nix/${{ inputs.release_tag }}
+          delete-branch: true

@@ -13,7 +13,7 @@
 
       src = pkgs.fetchurl {
         url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-x86_64.AppImage";
-        sha256 = "1x6dwfb5yp9hxmihj720a69ip4qixxrcfk4lldckmvf2mg6zrhcd";
+        hash = "sha256-jcH8zavC7TpZo5RMx3LvEZMbk1FAHAlj7TBdX5bjzfQ=";
       };
 
       appimageContents = pkgs.appimageTools.extract { inherit pname version src; };

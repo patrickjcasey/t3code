@@ -876,6 +876,14 @@ jobs:
     secrets:
       AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
 
+  publish_nix:
+    name: Publish Nix packaging
+    needs: [preflight, release]
+    if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.release.result == 'success' && needs.preflight.outputs.release_channel != 'preview' }}
+    uses: ./.github/workflows/publish-nix.yml
+    with:
+      release_tag: ${{ needs.preflight.outputs.tag }}
+
   deploy_web:
     name: Deploy hosted web app
     needs: [preflight, relay_public_config, release]
